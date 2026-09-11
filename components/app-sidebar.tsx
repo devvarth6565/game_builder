@@ -4,12 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
-import { PlusIcon } from "lucide-react"
+import { CoinsIcon, MessageSquareIcon, PlusIcon } from "lucide-react"
 
-import {
-  Empty,
-  EmptyDescription,
-} from "@/components/ui/empty"
 import {
   Sidebar,
   SidebarContent,
@@ -29,11 +25,11 @@ export function AppSidebar() {
   const pathname = usePathname()
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center justify-between gap-2 px-2">
-            <div className="flex items-center gap-2">
+          <SidebarMenuItem className="flex items-center justify-between gap-2 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
               <Image src="/logo.svg" alt="Logo" width={20} height={20} className="size-5" />
               <span className="font-logo text-base">Game builder</span>
             </div>
@@ -62,11 +58,14 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Recents</SidebarGroupLabel>
           <SidebarGroupContent>
-            <Empty className="border-dashed py-6">
-              <EmptyDescription className="text-xs">
-                No recent games yet.
-              </EmptyDescription>
-            </Empty>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled>
+                  <MessageSquareIcon />
+                  <span>No recent games yet.</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
@@ -75,13 +74,14 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton>
+              <CoinsIcon className="hidden group-data-[collapsible=icon]:block" />
               <span>Credits</span>
             </SidebarMenuButton>
             <SidebarMenuBadge>128</SidebarMenuBadge>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="flex items-center gap-3 px-2 py-1">
-          <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-3 px-2 py-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="min-w-0 flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
             <OrganizationSwitcher
               appearance={{
                 elements: {
