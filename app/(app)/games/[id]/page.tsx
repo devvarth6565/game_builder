@@ -1,3 +1,5 @@
+import { ChatThread } from "@/components/chat-thread"
+
 export default async function Page({
   params,
 }: {
@@ -5,5 +7,12 @@ export default async function Page({
 }) {
   const { id } = await params
 
-  return <p>{id}</p>
+  return (
+    <div className="flex h-svh flex-col">
+      <p className="shrink-0 p-4">{id}</p>
+      <div className="min-h-0 flex-1">
+        <ChatThread />
+      </div>
+    </div>
+  )
 }
