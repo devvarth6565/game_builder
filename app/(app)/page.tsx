@@ -8,7 +8,9 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty"
+import { Button } from "@/components/ui/button"
 import { ChatComposer } from "@/components/chat-composer"
+import { suggestions } from "@/lib/game/suggestions"
 
 export default async function Page() {
   await auth.protect({unauthenticatedUrl:"/sign-in"})
@@ -26,8 +28,21 @@ export default async function Page() {
             own words. If you can describe it, you can play it.
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent className="max-w-2xl">
+        <EmptyContent className="max-w-2xl gap-6">
           <ChatComposer />
+          <div className="flex flex-wrap justify-center gap-2">
+            {suggestions.map(({ label, icon: Icon }) => (
+              <Button
+                key={label}
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+              >
+                <Icon />
+                {label}
+              </Button>
+            ))}
+          </div>
         </EmptyContent>
       </Empty>
     </div>

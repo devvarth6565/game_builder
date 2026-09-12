@@ -19,10 +19,22 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
-export function AppSidebar() {
+export function AppSidebar({
+  games,
+}: {
+  games: { id: string; title: string }[]
+}) {
   const pathname = usePathname()
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   return (
     <Sidebar collapsible="icon">
@@ -56,17 +68,28 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Recents</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled>
-                  <MessageSquareIcon />
-                  <span>No recent games yet.</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
+          {isCollapsed ? (
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <SidebarMenuButton tooltip="Recents">
+                    <MessageSquareIcon />
+                    <span>Recents</span>
+                  </SidebarMenuButton>
+                }
+              />
+              <PopoverContent side="right" align="start">
+                <RecentsMenu games={games} pathname={pathname} />
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <>
+              <SidebarGroupLabel>Recents</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <RecentsMenu games={games} pathname={pathname} />
+              </SidebarGroupContent>
+            </>
+          )}
         </SidebarGroup>
       </SidebarContent>
 
@@ -99,5 +122,38 @@ export function AppSidebar() {
         </div>
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function RecentsMenu({
+  games,
+  pathname,
+}: {
+  games: { id: string; title: string }[]
+  pathname: string
+}) {
+  return (
+    <SidebarMenu>
+      {games.length === 0 ? (
+        <SidebarMenuItem>
+          <SidebarMenuButton disabled>
+            <MessageSquareIcon />
+            <span>No recent games yet.</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ) : (
+        games.map((game) => (
+          <SidebarMenuItem key={game.id}>
+            <SidebarMenuButton
+              isActive={pathname === `/games/${game.id}`}
+              render={<Link href={`/games/${game.id}`} />}
+            >
+              <MessageSquareIcon />
+              <span>{game.title}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ))
+      )}
+    </SidebarMenu>
   )
 }
