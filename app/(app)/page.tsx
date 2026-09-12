@@ -6,7 +6,9 @@ import {
   EmptyMedia,
   EmptyTitle,
   EmptyDescription,
+  EmptyContent,
 } from "@/components/ui/empty"
+import { ChatComposer } from "@/components/chat-composer"
 
 export default async function Page() {
   await auth.protect({unauthenticatedUrl:"/sign-in"})
@@ -24,6 +26,9 @@ export default async function Page() {
             own words. If you can describe it, you can play it.
           </EmptyDescription>
         </EmptyHeader>
+        <EmptyContent className="max-w-2xl">
+          <ChatComposer />
+        </EmptyContent>
       </Empty>
     </div>
   )
