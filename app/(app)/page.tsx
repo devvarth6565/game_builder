@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/empty"
 import { Button } from "@/components/ui/button"
 import { ChatComposer } from "@/components/chat-composer"
+import { createGame } from "@/lib/games/actions"
 import { suggestions } from "@/lib/game/suggestions"
 
 export default async function Page() {
@@ -29,7 +30,7 @@ export default async function Page() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="max-w-2xl gap-6">
-          <ChatComposer />
+          <ChatComposer onSubmit={createGame} />
           <div className="flex flex-wrap justify-center gap-2">
             {suggestions.map(({ label, icon: Icon }) => (
               <Button

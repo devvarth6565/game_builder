@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { ArrowUpIcon, ChevronDownIcon, Grid2x2Icon } from "lucide-react"
 
 import {
@@ -14,15 +16,31 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group"
-import { createGame } from "@/lib/games/actions"
 
-export function ChatComposer() {
+export function ChatComposer({
+  onSubmit,
+}: {
+  onSubmit: (message: string) => void | Promise<void>
+}) {
+  const [value, setValue] = useState("")
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+
+    const message = value.trim()
+    if (!message) return
+
+    setValue("")
+    onSubmit(message)
+  }
+
   return (
     <div className="flex w-full flex-col gap-4">
-      <form action={createGame}>
+      <form onSubmit={handleSubmit}>
         <InputGroup>
           <InputGroupTextarea
-            name="title"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
             required
             placeholder="Describe the game you want to build…"
           />

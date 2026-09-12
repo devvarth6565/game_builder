@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 
 import {
@@ -36,6 +38,10 @@ const mockMessages = [
       "Absolutely — I'll wire up a day/night cycle first, then layer in a hunger system tied to player health.",
   },
 ] as const
+
+function sendMessage(message: string) {
+  console.log(message)
+}
 
 export function ChatThread() {
   return (
@@ -83,7 +89,7 @@ export function ChatThread() {
       </MessageScrollerProvider>
 
       <div className="mx-auto w-full max-w-2xl px-4 pb-4">
-        <ChatComposer />
+        <ChatComposer onSubmit={sendMessage} />
       </div>
     </div>
   )

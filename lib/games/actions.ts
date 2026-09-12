@@ -1,23 +1,25 @@
 "use server"
 
 import { auth } from "@clerk/nextjs/server"
-import { refresh } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { db } from "@/lib/db"
 import { games } from "@/lib/db/schema"
 
-export async function createGame(formData: FormData) {
+export async function createGame(title: string) {
   const { orgId } = await auth.protect()
   if (!orgId) {
     throw new Error("An organization must be selected to create a game.")
   }
 
-  const title = formData.get("title")
-  if (typeof title !== "string" || title.trim().length === 0) {
+  if (title.trim().length === 0) {
     throw new Error("Title is required.")
   }
 
-  await db.insert(games).values({ orgId, title: title.trim() })
+  const [game] = await db
+    .insert(games)
+    .values({ orgId, title: title.trim() })
+    .returning({ id: games.id })
 
-  refresh()
+  redirect(`/games/${game.id}`)
 }
