@@ -1,8 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import Image from "next/image"
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { DefaultChatTransport, type UIMessage } from "ai"
 
 import {
   MessageScrollerProvider,
@@ -16,12 +17,40 @@ import { Message, MessageAvatar, MessageContent } from "@/components/ui/message"
 import { BubbleGroup, Bubble, BubbleContent } from "@/components/ui/bubble"
 import { ChatComposer } from "@/components/chat-composer"
 
-export function ChatThread() {
-  const { messages, sendMessage } = useChat({
+export function ChatThread({
+  id,
+  initialMessages,
+}: {
+  id: string
+  initialMessages: UIMessage[]
+}) {
+  const { messages, sendMessage, regenerate } = useChat({
+    id,
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      // The server loads the stored thread, so only send the new message.
+      // Regenerating replies to the stored thread as-is.
+      prepareSendMessagesRequest({ id, messages, trigger }) {
+        return {
+          body:
+            trigger === "submit-message"
+              ? { id, message: messages[messages.length - 1] }
+              : { id },
+        }
+      },
     }),
   })
+
+  // A new game starts with the prompt as an unanswered user message. The
+  // request is deferred so a Strict Mode remount (which stops the chat)
+  // cancels the timer instead of aborting an in-flight request.
+  useEffect(() => {
+    if (initialMessages.at(-1)?.role !== "user") return
+
+    const timeout = setTimeout(() => regenerate())
+    return () => clearTimeout(timeout)
+  }, [initialMessages, regenerate])
 
   return (
     <div className="flex h-full min-h-0 flex-col">
