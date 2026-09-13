@@ -19,7 +19,18 @@ export default async function Page({
     <div className="flex h-svh flex-col">
       <p className="shrink-0 p-4">{game.title}</p>
       <div className="min-h-0 flex-1">
-        <ChatThread id={game.id} initialMessages={game.messages} />
+        <ChatThread
+          id={game.id}
+          initialMessages={game.messages}
+          session={
+            game.chatAccessToken
+              ? {
+                  publicAccessToken: game.chatAccessToken,
+                  lastEventId: game.lastEventId ?? undefined,
+                }
+              : undefined
+          }
+        />
       </div>
     </div>
   )
