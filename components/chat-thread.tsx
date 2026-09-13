@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import Image from "next/image"
 import { useChat } from "@ai-sdk/react"
 import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
@@ -42,12 +42,21 @@ export function ChatThread({
     sessions: session ? { [id]: session } : undefined,
   })
 
-  const { messages, sendMessage, regenerate } = useChat({
+  const { messages, sendMessage, regenerate, stop, status } = useChat({
     id,
     messages: initialMessages,
     transport,
     resume: session !== undefined,
   })
+
+  const isGenerating = status === "submitted" || status === "streaming"
+
+  // `stop()` alone doesn't reach the agent for a resumed stream, so the
+  // transport signals the run directly; `stop()` then settles the UI state.
+  const handleStop = useCallback(() => {
+    void transport.stopGeneration(id)
+    stop()
+  }, [transport, id, stop])
 
   // A new game starts with the prompt as an unanswered user message. The
   // request is deferred so a Strict Mode remount (which stops the chat)
@@ -111,7 +120,11 @@ export function ChatThread({
       </MessageScrollerProvider>
 
       <div className="mx-auto w-full max-w-2xl px-4 pb-4">
-        <ChatComposer onSubmit={(text) => sendMessage({ text })} />
+        <ChatComposer
+          onSubmit={(text) => sendMessage({ text })}
+          onStop={handleStop}
+          isGenerating={isGenerating}
+        />
       </div>
     </div>
   )

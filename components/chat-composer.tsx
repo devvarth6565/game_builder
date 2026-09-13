@@ -2,7 +2,12 @@
 
 import { useState } from "react"
 
-import { ArrowUpIcon, ChevronDownIcon, Grid2x2Icon } from "lucide-react"
+import {
+  ArrowUpIcon,
+  ChevronDownIcon,
+  Grid2x2Icon,
+  SquareIcon,
+} from "lucide-react"
 
 import {
   DropdownMenu,
@@ -19,13 +24,18 @@ import {
 
 export function ChatComposer({
   onSubmit,
+  onStop,
+  isGenerating = false,
 }: {
   onSubmit: (message: string) => void | Promise<void>
+  onStop?: () => void
+  isGenerating?: boolean
 }) {
   const [value, setValue] = useState("")
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (isGenerating) return
 
     const message = value.trim()
     if (!message) return
@@ -61,14 +71,30 @@ export function ChatComposer({
                 <DropdownMenuItem>Claude</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <InputGroupButton
-              type="submit"
-              variant="default"
-              size="icon-sm"
-              className="rounded-full"
-            >
-              <ArrowUpIcon />
-            </InputGroupButton>
+            {isGenerating ? (
+              <InputGroupButton
+                key="stop"
+                type="button"
+                variant="default"
+                size="icon-sm"
+                className="rounded-full"
+                aria-label="Stop generating"
+                onClick={onStop}
+              >
+                <SquareIcon className="fill-current" />
+              </InputGroupButton>
+            ) : (
+              <InputGroupButton
+                key="submit"
+                type="submit"
+                variant="default"
+                size="icon-sm"
+                className="rounded-full"
+                aria-label="Send message"
+              >
+                <ArrowUpIcon />
+              </InputGroupButton>
+            )}
           </InputGroupAddon>
         </InputGroup>
       </form>
