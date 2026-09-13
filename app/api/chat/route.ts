@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server"
-import { anthropic } from "@ai-sdk/anthropic"
+import { groq } from "@ai-sdk/groq"
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json()
 
   const result = streamText({
-    model: anthropic("claude-sonnet-5"),
+    model: groq("openai/gpt-oss-20b"),
     instructions: "You are a helpful assistant.",
     messages: await convertToModelMessages(messages),
   })

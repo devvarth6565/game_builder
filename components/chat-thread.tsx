@@ -1,6 +1,8 @@
 "use client"
 
 import Image from "next/image"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 
 import {
   MessageScrollerProvider,
@@ -14,43 +16,20 @@ import { Message, MessageAvatar, MessageContent } from "@/components/ui/message"
 import { BubbleGroup, Bubble, BubbleContent } from "@/components/ui/bubble"
 import { ChatComposer } from "@/components/chat-composer"
 
-const mockMessages = [
-  {
-    id: "1",
-    role: "user",
-    content: "I want to build a voxel survival game set on a floating island.",
-  },
-  {
-    id: "2",
-    role: "assistant",
-    content:
-      "Great idea! Let's start with the terrain generation and a basic block-placing system.",
-  },
-  {
-    id: "3",
-    role: "user",
-    content: "Can we add a day/night cycle and simple hunger mechanics too?",
-  },
-  {
-    id: "4",
-    role: "assistant",
-    content:
-      "Absolutely — I'll wire up a day/night cycle first, then layer in a hunger system tied to player health.",
-  },
-] as const
-
-function sendMessage(message: string) {
-  console.log(message)
-}
-
 export function ChatThread() {
+  const { messages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+  })
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <MessageScrollerProvider>
         <MessageScroller className="flex-1">
           <MessageScrollerViewport>
             <MessageScrollerContent className="mx-auto w-full max-w-2xl px-4 py-6">
-              {mockMessages.map((message) => {
+              {messages.map((message) => {
                 const align = message.role === "user" ? "end" : "start"
 
                 return (
@@ -74,7 +53,13 @@ export function ChatThread() {
                               message.role === "user" ? "secondary" : "ghost"
                             }
                           >
-                            <BubbleContent>{message.content}</BubbleContent>
+                            {message.parts.map((part, index) =>
+                              part.type === "text" ? (
+                                <BubbleContent key={index}>
+                                  {part.text}
+                                </BubbleContent>
+                              ) : null
+                            )}
                           </Bubble>
                         </BubbleGroup>
                       </MessageContent>
@@ -89,7 +74,7 @@ export function ChatThread() {
       </MessageScrollerProvider>
 
       <div className="mx-auto w-full max-w-2xl px-4 pb-4">
-        <ChatComposer onSubmit={sendMessage} />
+        <ChatComposer onSubmit={(text) => sendMessage({ text })} />
       </div>
     </div>
   )
