@@ -9,6 +9,8 @@ export const games = pgTable("games", {
   // Trigger.dev chat session state, so a reload can resume the stream.
   chatAccessToken: text("chat_access_token"),
   lastEventId: text("last_event_id"),
+  // Daytona sandbox that holds the game's files.
+  sandboxId: text("sandbox_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

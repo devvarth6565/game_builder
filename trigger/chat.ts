@@ -3,6 +3,7 @@ import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import { createIdGenerator, streamText, validateUIMessages } from "ai"
 import { eq } from "drizzle-orm"
 
+import { createGameSandbox } from "@/lib/daytona/utils"
 import { db } from "@/lib/db"
 import { games } from "@/lib/db/schema"
 
@@ -10,6 +11,10 @@ export const gameChat = chat.agent({
   id: "game-chat",
   uiMessageStreamOptions: {
     generateMessageId: createIdGenerator({ prefix: "msg", size: 16 }),
+  },
+  // Fires once per chat, on its first message.
+  onChatStart: async ({ chatId }) => {
+    await createGameSandbox(chatId)
   },
   // The games table is the source of truth for the thread. Access to a chat
   // is authorized when its session token is minted (lib/games/chat-actions.ts).
