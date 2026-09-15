@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { db } from "@/lib/db"
 import { games } from "@/lib/db/schema"
+import { gameInstructions } from "@/lib/games/instructions"
 
 export const gameChat = chat.agent({
   id: "game-chat",
@@ -61,7 +62,7 @@ export const gameChat = chat.agent({
     streamText({
       ...chat.toStreamTextOptions(),
       model: groq("openai/gpt-oss-20b"),
-      instructions: "You are a helpful assistant.",
+      instructions: gameInstructions,
       messages,
       abortSignal: signal,
     }),
