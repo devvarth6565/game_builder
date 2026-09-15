@@ -1,11 +1,18 @@
+import { DaytonaNotFoundError } from "@daytona/sdk"
 import { eq } from "drizzle-orm"
 
 import { daytona } from "@/lib/daytona/client"
 import { db } from "@/lib/db"
 import { games } from "@/lib/db/schema"
 
-const GAME_DIR = "/home/daytona/game"
+export const GAME_DIR = "/home/daytona/game"
 export const GAME_SERVER_PORT = 8080
+
+const SETTLING_STATES = new Set<string | undefined>([
+  "stopping",
+  "archiving",
+  "pausing",
+])
 
 export async function createGameSandbox(gameId: string) {
   const sandbox = await daytona.create({ labels: { gameId } })
@@ -17,6 +24,69 @@ export async function createGameSandbox(gameId: string) {
     .update(games)
     .set({ sandboxId: sandbox.id, updatedAt: new Date() })
     .where(eq(games.id, gameId))
+
+  return sandbox
+}
+
+// Returns the game's sandbox in the "started" state, ready for tools to use.
+// Starts it if stopped or archived, waits out in-flight transitions, recovers
+// recoverable errors, and replaces it with a fresh sandbox when it is missing,
+// destroyed, or broken beyond recovery.
+export async function getGameSandbox(gameId: string) {
+  const [game] = await db
+    .select({ sandboxId: games.sandboxId })
+    .from(games)
+    .where(eq(games.id, gameId))
+  if (!game) {
+    throw new Error(`Game ${gameId} not found`)
+  }
+
+  if (!game.sandboxId) {
+    return createGameSandbox(gameId)
+  }
+
+  let sandbox: Sandbox
+  try {
+    sandbox = await daytona.get(game.sandboxId)
+  } catch (error) {
+    if (error instanceof DaytonaNotFoundError) {
+      return createGameSandbox(gameId)
+    }
+    throw error
+  }
+
+  // A sandbox can't be started mid-shutdown, so let these transitions settle.
+  for (let attempt = 0; SETTLING_STATES.has(sandbox.state); attempt++) {
+    if (attempt >= 60) {
+      throw new Error(`Sandbox ${sandbox.id} stuck in state ${sandbox.state}`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await sandbox.refreshData()
+  }
+
+  switch (sandbox.state) {
+    case "started":
+      break
+    case "creating":
+    case "starting":
+    case "restoring":
+    case "resuming":
+    case "pulling_snapshot":
+      await sandbox.waitUntilStarted()
+      break
+    case "error":
+    case "build_failed":
+      if (!sandbox.recoverable) {
+        return createGameSandbox(gameId)
+      }
+      await sandbox.recover()
+      break
+    case "destroyed":
+    case "destroying":
+      return createGameSandbox(gameId)
+    default:
+      await sandbox.start()
+  }
 
   return sandbox
 }
