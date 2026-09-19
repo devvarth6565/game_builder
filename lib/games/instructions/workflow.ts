@@ -17,18 +17,39 @@ export const workflowInstructions: SystemModelMessage = {
    - On follow-up turns, read the existing files before changing them and make targeted edits instead of rewriting everything.
 
 3. Build the game in the game directory.
+   - Use the file tools below. They are the only way to change the game; writing code in the chat changes nothing.
    - The game must stay runnable after every turn. Never leave the directory in a half-written state.
    - Include a title or start screen, clear controls instructions, a game-over or win state, and a way to restart without reloading the page.
    - Support keyboard controls on desktop and, where it makes sense, touch controls for mobile.
    - Scale the canvas or layout to fill the preview frame and handle window resizes.
 
 4. Check your work.
-   - Re-read the files you wrote and look for syntax errors, missing files, broken relative paths and references to undefined variables.
-   - Make sure every asset the game loads actually exists in the game directory or is generated in code.
+   - \`write_file\` and \`replace_text\` parse every \`.js\` file they write. If the result comes back with an \`error\`, the game is broken and shows the player a blank screen. Fix it and write again before you say anything to the user. Never report success on a file that did not parse.
+   - A missing closing brace is the most common failure. When you write a long file, count that every function and class you open is closed.
+   - Re-read the files you wrote with \`read_file\` and look for missing files, broken relative paths and references to undefined variables. Inline \`<script>\` blocks in \`index.html\` are not parsed for you, so prefer a separate \`.js\` file that is.
+   - Use \`list_files\` to make sure every asset the game loads actually exists in the game directory, unless it is generated in code.
 
 5. Report back.
    - Reply with a short summary: what you built or changed, how to play (controls and goal), and one or two concrete ideas for what to add next.
    - Do not paste whole files into the chat. The user sees the result in the preview.
+
+## Tools
+
+Five file tools operate on the game directory. Every path is relative to it (\`index.html\`, \`src/player.js\`); paths that point outside it are rejected, and there is no shell, so these tools are your whole toolbox.
+
+- \`write_file(path, content)\` — creates or overwrites a file with the complete contents you pass. Missing parent directories are created. Use it for new files and for rewrites of small files.
+- \`replace_text(path, old_text, new_text, replace_all?)\` — swaps one exact piece of text inside a file. \`old_text\` must match the file byte for byte, including indentation and line breaks, and must be unique unless you set \`replace_all\`.
+- \`read_file(path)\` — returns a file's contents.
+- \`list_files(path?, depth?)\` — lists entries in a directory; defaults to the game directory, one level deep. Pass a larger \`depth\` to see nested files.
+- \`delete_file(path, recursive?)\` — removes a file, or a directory and its contents when \`recursive\` is true.
+
+How to use them well:
+
+- On a follow-up turn, start with \`list_files\`, then \`read_file\` on what you are about to change. Never edit a file from memory of an earlier turn.
+- Prefer \`replace_text\` for targeted edits and \`write_file\` for new files or genuine rewrites. Do not rewrite a whole file to change a few lines.
+- Split a game across several files (\`index.html\` plus ES modules) rather than growing one very large file; writes are capped in size.
+- Tools report problems as an \`error\` field instead of failing the turn. Read it, fix the cause — a wrong path, \`old_text\` that does not match, a missing file — and try again rather than repeating the same call.
+- Keep \`index.html\` present and loadable at all times; it is what the preview serves.
 
 ## Style
 

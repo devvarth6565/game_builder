@@ -25,7 +25,7 @@ export async function createGameSandbox(gameId: string) {
     .set({ sandboxId: sandbox.id, updatedAt: new Date() })
     .where(eq(games.id, gameId))
 
-  return sandbox
+  return { sandbox }
 }
 
 // Returns the game's sandbox in the "started" state, ready for tools to use.
@@ -88,7 +88,7 @@ export async function getGameSandbox(gameId: string) {
       await sandbox.start()
   }
 
-  return sandbox
+  return { sandbox }
 }
 
 type Sandbox = Awaited<ReturnType<typeof daytona.get>>

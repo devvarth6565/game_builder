@@ -1,15 +1,24 @@
 import { groq } from "@ai-sdk/groq"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
-import { createIdGenerator, streamText, validateUIMessages } from "ai"
+import {
+  createIdGenerator,
+  stepCountIs,
+  streamText,
+  validateUIMessages,
+} from "ai"
 import { eq } from "drizzle-orm"
 
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { db } from "@/lib/db"
 import { games } from "@/lib/db/schema"
 import { gameInstructions } from "@/lib/games/instructions"
+import { createGameTools } from "@/lib/games/tools"
 
 export const gameChat = chat.agent({
   id: "game-chat",
+  // A chat is a game, so the chat id is the game id. Resolved per turn, which
+  // keeps the sandbox lookup inside the turn that uses it.
+  tools: ({ chatId }) => createGameTools(chatId),
   uiMessageStreamOptions: {
     generateMessageId: createIdGenerator({ prefix: "msg", size: 16 }),
   },
@@ -47,7 +56,12 @@ export const gameChat = chat.agent({
     return validateUIMessages({ messages: stored })
   },
   // One UPDATE writes the thread and the resume cursor atomically.
-  onTurnComplete: async ({ chatId, uiMessages, chatAccessToken, lastEventId }) => {
+  onTurnComplete: async ({
+    chatId,
+    uiMessages,
+    chatAccessToken,
+    lastEventId,
+  }) => {
     await db
       .update(games)
       .set({
@@ -58,12 +72,16 @@ export const gameChat = chat.agent({
       })
       .where(eq(games.id, chatId))
   },
-  run: async ({ messages, signal }) =>
+  run: async ({ messages, tools, signal }) =>
     streamText({
-      ...chat.toStreamTextOptions(),
-      model: groq("openai/gpt-oss-20b"),
+      ...chat.toStreamTextOptions({ tools }),
+      // 120b over 20b for the build loop: ~33k max output tokens, so a whole
+      // game fits in one write_file call without truncating.
+      model: groq("openai/gpt-oss-120b"),
       instructions: gameInstructions,
       messages,
       abortSignal: signal,
+      // Building a game takes a read/write/verify loop, not a single call.
+      stopWhen: stepCountIs(25),
     }),
 })
