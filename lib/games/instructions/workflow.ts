@@ -9,7 +9,7 @@ export const workflowInstructions: SystemModelMessage = {
 1. Understand the request.
    - The first message is the user's pitch for the game (for example "Voxel survival" or "Sunny kingdom platformer"). Later messages are feedback or change requests on the current build.
    - If the pitch is short or vague, do not stall with a list of questions. Pick sensible defaults for genre, controls, art style and win/lose conditions, state them briefly, and build.
-   - Only ask a question first when the request is genuinely ambiguous in a way that would waste a whole build if you guessed wrong.
+   - Only ask a question first when the request is genuinely ambiguous in a way that would waste a whole build if you guessed wrong. Ask with \`ask_player\`, which stops the turn until the user picks; never ask in prose and keep building as if you had an answer.
 
 2. Plan before writing.
    - Decide the core loop: what the player does every few seconds, how they win or lose, and how the score or progress is shown.
@@ -47,7 +47,11 @@ Five file tools operate on the game directory. Every path is relative to it (\`i
 - \`list_files(path?, depth?)\` — lists entries in a directory; defaults to the game directory, one level deep. Pass a larger \`depth\` to see nested files.
 - \`delete_file(path, recursive?)\` — removes a file, or a directory and its contents when \`recursive\` is true.
 
-How to use them well:
+One more tool asks the user instead of touching files:
+
+- \`ask_player(dimension, question, options)\` — offers the user 2 to 4 directions for one part of the game (\`loop\`, \`goal\`, \`world\`, \`look\`, \`feel\`, \`controls\` or \`scope\`) and returns the option they picked. The turn stops while they decide, so call it before you start building, at most once per turn, and only for a decision you genuinely cannot default. Then build the option they chose without asking again.
+
+How to use the file tools well:
 
 - On a follow-up turn, start with \`list_files\`, then \`read_file\` on what you are about to change. Never edit a file from memory of an earlier turn.
 - Prefer \`replace_text\` for targeted edits and \`write_file\` for new files or genuine rewrites. Do not rewrite a whole file to change a few lines.

@@ -3,6 +3,7 @@ import path from "node:path"
 import { z } from "zod"
 
 import { GAME_DIR, getGameSandbox } from "@/lib/daytona/utils"
+import { askPlayer } from "@/lib/games/ask-player"
 
 // Guards against a runaway model filling the sandbox disk or the context window.
 const MAX_WRITE_BYTES = 512 * 1024
@@ -56,8 +57,9 @@ type Sandbox = Awaited<ReturnType<typeof getGameSandbox>>["sandbox"]
 const SYNTAX_CHECKED_EXTENSIONS = new Set([".js", ".mjs"])
 
 /**
- * The file tools the game agent uses to build the game, all confined to the
- * game directory of that game's Daytona sandbox.
+ * The tools the game agent uses: the file tools, all confined to the game
+ * directory of that game's Daytona sandbox, plus `ask_player`, which the
+ * player answers in the UI rather than the server.
  *
  * Built per turn so the sandbox is looked up (and started, if it was stopped)
  * at most once no matter how many tool calls the turn makes.
@@ -123,6 +125,8 @@ export function createGameTools(gameId: string) {
   }
 
   return {
+    ask_player: askPlayer,
+
     write_file: tool({
       description: `Create or overwrite a file in the game directory. Writes the whole file, so pass the complete contents. Parent directories are created as needed. Use replace_text instead for small edits to a large file.`,
       inputSchema: z.object({
