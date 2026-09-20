@@ -1,3 +1,4 @@
+import { additionalFiles } from "@trigger.dev/build/extensions/core";
 import { defineConfig } from "@trigger.dev/sdk";
 
 export default defineConfig({
@@ -19,4 +20,10 @@ export default defineConfig({
     },
   },
   dirs: ["trigger"],
+  build: {
+    // The sandbox runtime files are read from disk, never imported, so the
+    // bundler can't see them. Ship them alongside the tasks, preserving their
+    // paths relative to the project root.
+    extensions: [additionalFiles({ files: ["lib/games/runtime/**/*"] })],
+  },
 });

@@ -1,3 +1,6 @@
+import { readdir } from "node:fs/promises"
+import path from "node:path"
+
 import { DaytonaNotFoundError } from "@daytona/sdk"
 import { eq } from "drizzle-orm"
 
@@ -14,11 +17,41 @@ const SETTLING_STATES = new Set<string | undefined>([
   "pausing",
 ])
 
+// Files, folders and subfolders of lib/games/runtime are the seed of every new
+// sandbox. Nothing imports them, so trigger.config.ts ships them with the
+// additionalFiles build extension, which keeps this path relative to the
+// project root in the deployed bundle too.
+const RUNTIME_DIR = path.join(process.cwd(), "lib", "games", "runtime")
+
+// The runtime tree, flattened into uploads that recreate it under GAME_DIR.
+async function runtimeUploads() {
+  const entries = await readdir(RUNTIME_DIR, {
+    recursive: true,
+    withFileTypes: true,
+  })
+
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => {
+      const source = path.join(entry.parentPath, entry.name)
+      const relativePath = path
+        .relative(RUNTIME_DIR, source)
+        .split(path.sep)
+        .join(path.posix.sep)
+      return { source, destination: path.posix.join(GAME_DIR, relativePath) }
+    })
+}
+
 export async function createGameSandbox(gameId: string) {
-  const sandbox = await daytona.create({ labels: { gameId } })
+  const [sandbox, uploads] = await Promise.all([
+    daytona.create({ labels: { gameId } }),
+    runtimeUploads(),
+  ])
 
   await sandbox.fs.createFolder(GAME_DIR, "755")
-  await sandbox.fs.uploadFile(Buffer.from("New game"), `${GAME_DIR}/index.html`)
+  if (uploads.length > 0) {
+    await sandbox.fs.uploadFiles(uploads)
+  }
 
   await db
     .update(games)

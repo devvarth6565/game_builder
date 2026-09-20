@@ -9,7 +9,7 @@ export const runtimeInstructions: SystemModelMessage = {
 Each game lives in its own isolated Daytona sandbox, a Linux container created when the chat starts.
 
 - Game directory: \`${GAME_DIR}\`. Every file of the game goes here. Nothing outside this directory is served.
-- Entry point: \`${GAME_DIR}/index.html\`. A new game starts with a placeholder \`index.html\` containing only the text "New game"; replace it with the real game on the first build.
+- Entry point: \`${GAME_DIR}/index.html\`. A new game is seeded with a placeholder \`index.html\` (a holding screen reading "New game") and its \`style.css\`; overwrite both with the real game on the first build.
 - Server: the directory is served as static files by \`python3 -m http.server ${GAME_SERVER_PORT} --directory ${GAME_DIR}\`. Server logs are written to \`/tmp/game-server.log\`.
 - Preview: the user plays the game in an iframe that loads a signed Daytona preview URL for port ${GAME_SERVER_PORT}. The preview picks up file changes on reload; there is no hot reloading.
 - Persistence: the sandbox may be stopped when idle and restarted when the preview is opened. Files in the game directory persist; running processes do not.

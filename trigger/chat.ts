@@ -14,6 +14,14 @@ import { games } from "@/lib/db/schema"
 import { gameInstructions } from "@/lib/games/instructions"
 import { createGameTools } from "@/lib/games/tools"
 
+// Tool calls that change what the preview serves. A turn that only reads or
+// answers a question leaves the game directory alone and needs no reload.
+const PREVIEW_MUTATING_PARTS = new Set([
+  "tool-write_file",
+  "tool-replace_text",
+  "tool-delete_file",
+])
+
 export const gameChat = chat.agent({
   id: "game-chat",
   // A chat is a game, so the chat id is the game id. Resolved per turn, which
@@ -54,6 +62,31 @@ export const gameChat = chat.agent({
     }
 
     return validateUIMessages({ messages: stored })
+  },
+  // The preview URL is stable across builds, so the frontend has no way to
+  // notice that the game changed. Signal it here, while the stream is still
+  // open (onTurnComplete runs after it closes, and has no writer). Transient
+  // because this is an event, not thread content: persisting it would replay a
+  // stale reload every time the conversation is rehydrated.
+  onBeforeTurnComplete: async ({ writer, responseMessage }) => {
+    const changedGame = responseMessage?.parts.some((part) =>
+      PREVIEW_MUTATING_PARTS.has(part.type)
+    )
+    if (!changedGame) {
+      return
+    }
+
+    try {
+      writer.write({
+        type: "data-preview-revision",
+        data: { revision: Date.now() },
+        transient: true,
+      })
+    } catch (error) {
+      // Refreshing the preview is a convenience; a turn that built the game
+      // must not be lost because the signal for it could not be written.
+      console.error("Failed to signal preview revision", error)
+    }
   },
   // One UPDATE writes the thread and the resume cursor atomically.
   onTurnComplete: async ({

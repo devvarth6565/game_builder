@@ -5,6 +5,9 @@ const PREVIEW_URL_TTL_SECONDS = 3600
 // Re-mint before expiry so a long-lived preview never serves a dead URL.
 const REFRESH_MARGIN_MS = 5 * 60 * 1000
 
+// The Daytona daemon answers with these when nothing is listening on the port.
+const UPSTREAM_DOWN_STATUSES = new Set([502, 503, 504])
+
 type CachedPreview = { base: string; expiresAt: number }
 
 // Minting a signed URL and health-checking the game server are both round
@@ -52,16 +55,31 @@ export async function GET(
     return new Response("Not found", { status: 404 })
   }
 
-  const base = await previewBase(game.sandboxId)
   // Next strips a trailing slash, so the iframe asks for ".../preview/index.html"
   // rather than ".../preview/". Bare hits on the route still serve the entry point.
-  const target = new URL(path?.length ? path.join("/") : "index.html", base)
-  target.search = new URL(request.url).search
+  const file = path?.length ? path.join("/") : "index.html"
+  const search = new URL(request.url).search
 
-  const upstream = await fetch(target, {
-    headers: { "X-Daytona-Skip-Preview-Warning": "true" },
-    cache: "no-store",
-  })
+  const fetchFromSandbox = async (base: string) => {
+    const target = new URL(file, base)
+    target.search = search
+
+    return fetch(target, {
+      headers: { "X-Daytona-Skip-Preview-Warning": "true" },
+      cache: "no-store",
+    })
+  }
+
+  let upstream = await fetchFromSandbox(await previewBase(game.sandboxId))
+
+  // The static server does not survive the sandbox being stopped, and the
+  // cached URL lets us skip the health check that would have restarted it. A
+  // gateway error from the daemon means nothing is listening on the port, so
+  // drop the entry and take the slow path, which boots the server again.
+  if (UPSTREAM_DOWN_STATUSES.has(upstream.status)) {
+    previewCache.delete(game.sandboxId)
+    upstream = await fetchFromSandbox(await previewBase(game.sandboxId))
+  }
 
   return new Response(upstream.body, {
     status: upstream.status,

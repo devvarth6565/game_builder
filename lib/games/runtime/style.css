@@ -1,0 +1,49 @@
+/*
+  Styles for the holding screen in index.html. Both files are placeholders the
+  agent is expected to overwrite with the real game.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0b0b0f;
+  color: #e8e8ed;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.holding {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.holding h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.holding p {
+  margin: 0;
+  max-width: 32rem;
+  color: #9a9aa5;
+  font-size: clamp(0.95rem, 3.5vw, 1.05rem);
+  line-height: 1.5;
+}

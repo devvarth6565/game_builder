@@ -19,8 +19,20 @@ function ResizablePanelGroup({
   )
 }
 
-function ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {
-  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />
+function ResizablePanel({ style, ...props }: ResizablePrimitive.PanelProps) {
+  return (
+    <ResizablePrimitive.Panel
+      data-slot="resizable-panel"
+      // The primitive wraps children in a div with `overflow: auto`, making
+      // every panel its own scroll container and stacking a second scrollbar
+      // on top of whatever the panel's content already scrolls. Panels size to
+      // the group, so their content should manage its own overflow. This has
+      // to be a style override rather than a class because the primitive sets
+      // it inline; callers can still opt back in by passing their own style.
+      style={{ overflow: "hidden", ...style }}
+      {...props}
+    />
+  )
 }
 
 function ResizableHandle({
