@@ -2,19 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>New game</title>
+
+    <!--
+      KEEP THIS IMPORT MAP when you rewrite index.html.
+
+      It maps the bare specifier "three" (and "three/addons/") to a pinned CDN
+      build, which is what lets the engine and any three.js addon resolve to the
+      same single copy of the library. The URL here must stay identical to the
+      one re-exported from engine/three.js.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+        }
+      }
+    </script>
+
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <!-- The engine renders into this element and sizes itself to it. -->
+    <div id="game"></div>
+
     <!--
-      The holding screen a new sandbox serves until the agent writes a real
-      game over it. It exists so the preview has something to show on the very
-      first load, before the first turn has produced any code.
+      The holding screen a new sandbox serves until the agent writes a real game
+      over it. It exists so the preview has something to show on the very first
+      load, before the first turn has produced any code.
     -->
-    <main class="holding">
+    <main class="holding" id="holding">
       <h1>New game</h1>
       <p>Nothing has been built yet — describe the game you want.</p>
     </main>
+
+    <noscript>
+      <p class="holding">This game needs JavaScript enabled.</p>
+    </noscript>
+
+    <script type="module" src="./welcome.js"></script>
   </body>
 </html>
